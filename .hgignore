@@ -1,0 +1,6 @@
+\.orig$
+\.orig\..*$
+\.chg\..*$
+\.rej$
+\.conflict\~$
+^src/main/resources/rebel\.xml$
