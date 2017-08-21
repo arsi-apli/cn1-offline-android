@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.9.4
+Created-By: 1.8.0_51-b16 (Oracle Corporation)
+Class-Path: lib/CLDC11.jar lib/CodenameOne.jar lib/CodenameOne_SRC.zip
+  lib/override/ lib/cls/ lib/stubs/ lib/JavaSE.jar lib/internal_tmp/
+X-COMMENT: Main-Class will be added automatically by build
+Main-Class: com.codename1.impl.javase.Simulator
+
