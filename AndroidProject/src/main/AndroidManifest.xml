@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.codename1.apps.devicetester">
+
+    <application android:allowBackup="true"  android:icon="@drawable/icon" android:label="DeviceTester" android:name="android.support.multidex.MultiDexApplication">
+    <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>
+    <activity  android:label="DeviceTester" android:launchMode="singleTop" android:name="com.codename1.apps.devicetester.DeviceTesterStub" >
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
+        </intent-filter>
+    </activity>
+    <receiver android:name="com.codename1.impl.android.LocalNotificationPublisher"/>
+    <service android:exported="false" android:name="com.codename1.impl.android.BackgroundFetchHandler"/>
+    <activity android:name="com.codename1.impl.android.CodenameOneBackgroundFetchActivity" android:theme="@android:style/Theme.NoDisplay"/>
+    <activity android:name="com.codename1.location.CodenameOneBackgroundLocationActivity" android:theme="@android:style/Theme.NoDisplay"/>
+    <service android:exported="false" android:name="com.codename1.location.BackgroundLocationHandler"/>
+    <service android:exported="false" android:name="com.codename1.location.GeofenceHandler"/>
+    <service android:exported="false" android:name="com.codename1.media.AudioService"/>
+    <activity android:excludeFromRecents="true" android:exported="false" android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity" android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
+    <provider android:authorities="com.codename1.apps.devicetester.google_measurement_service" android:exported="false" android:name="com.google.android.gms.measurement.AppMeasurementContentProvider"/>
+    <receiver android:enabled="true" android:name="com.google.android.gms.measurement.AppMeasurementReceiver">
+        <intent-filter>
+            <action android:name="com.google.android.gms.measurement.UPLOAD"/>
+        </intent-filter>
+    </receiver>
+    <service android:enabled="true" android:exported="false" android:name="com.google.android.gms.measurement.AppMeasurementService"/>
+    <activity android:name="com.google.android.gms.ads.AdActivity" android:theme="@android:style/Theme.Translucent"/>
+</application>
+
+</manifest>
