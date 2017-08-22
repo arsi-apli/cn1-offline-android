@@ -195,7 +195,7 @@ public class InitAndroidProjectAction extends NodeAction {
                     Exceptions.printStackTrace(ex);
                 }
                 try {
-//libs
+                    //libs
                     FileObject src = FileUtil.createFolder(directory.getParent(), "src");
                     ClassPath classPath = ClassPath.getClassPath(src, ClassPath.COMPILE);
                     List<FileObject> libs = new ArrayList<>();
