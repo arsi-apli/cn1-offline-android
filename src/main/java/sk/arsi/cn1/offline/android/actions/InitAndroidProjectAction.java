@@ -12,12 +12,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.netbeans.api.annotations.common.StaticResource;
+import org.netbeans.api.java.classpath.ClassPath;
 import org.netbeans.api.project.Project;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
@@ -80,6 +83,7 @@ public class InitAndroidProjectAction extends NodeAction {
                 String keystorePassword = properties.getProperty("codename1.android.keystorePassword");
                 String keystore = properties.getProperty("codename1.android.keystore");
                 String keystoreAlias = properties.getProperty("codename1.android.keystoreAlias");
+                //gradle build
                 FileObject gradle = directory.getFileObject("build", "gradle");
                 try {
                     String script = gradle.asText("UTF-8");
@@ -103,11 +107,12 @@ public class InitAndroidProjectAction extends NodeAction {
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }
+                //setup SDK
                 String sdkPath = NbPreferences.forModule(InitAndroidProjectAction.class).get("sdk", null);
                 if (sdkPath == null) {
                     FileChooserBuilder fcho = new FileChooserBuilder(InitAndroidProjectAction.class);
                     fcho.setDirectoriesOnly(true);
-                    fcho.setTitle("Select Android SDK home");
+                    fcho.setTitle("Select Android SDK location");
                     File sdk = fcho.showOpenDialog();
                     if (sdk != null) {
                         sdkPath = sdk.getAbsolutePath();
@@ -132,7 +137,7 @@ public class InitAndroidProjectAction extends NodeAction {
                     FileObject[] children = src.getChildren();
                     for (FileObject fo : children) {
                         if (fo.isFolder()) {
-                            copyFolder(fo, FileUtil.createFolder(srcOut, fo.getNameExt()));
+                            copyFolder(fo, FileUtil.createFolder(srcOut, fo.getNameExt()), null);
                         } else {
                             FileObject previous = assetsOut.getFileObject(fo.getName(), fo.getExt());
                             if (previous != null) {
@@ -141,6 +146,31 @@ public class InitAndroidProjectAction extends NodeAction {
                             FileUtil.copyFile(fo, assetsOut, fo.getName(), fo.getExt());
                         }
                     }
+
+                    //natives
+                    List<FileObject> natives = new ArrayList<>();
+                    src = FileUtil.createFolder(FileUtil.createFolder(directory.getParent(), "native"), "android");
+                    children = src.getChildren();
+                    for (FileObject fo : children) {
+                        if (fo.isFolder()) {
+                            copyFolder(fo, FileUtil.createFolder(srcOut, fo.getNameExt()), natives);
+                        } else {
+                            FileObject previous = srcOut.getFileObject(fo.getName(), fo.getExt());
+                            if (previous != null) {
+                                previous.delete();
+                            }
+                            FileObject copyFile = FileUtil.copyFile(fo, srcOut, fo.getName(), fo.getExt());
+                            natives.add(copyFile);
+                        }
+                    }
+                    String outPatch = srcOut.getPath();
+                    List<String> classes = new ArrayList<>();
+                    for (FileObject fon : natives) {
+                        if (fon.getPath().contains(".java")) {
+                            classes.add(fon.getPath().replace(outPatch + File.separator, "").replace("/", ".").replace("\\", ".").replace(".java", ""));
+                        }
+                    }
+                    //stub
                     StringTokenizer tok = new StringTokenizer(packageName, ".", false);
                     FileObject current = srcOut;
                     while (tok.hasMoreElements()) {
@@ -152,28 +182,73 @@ public class InitAndroidProjectAction extends NodeAction {
                     source = source.replaceAll("#package", packageName);
                     source = source.replaceAll("#classname", mainName + "Stub");
                     source = source.replaceAll("#origname", mainName);
+                    String nativeStub = "\n";
+                    for (String classe : classes) {
+                        nativeStub += "com.codename1.system.NativeLookup.register(" + classe.replace("Impl", "") + ".class," + classe + ".class);\n";
+                    }
+                    nativeStub += "\n";
+                    source = source.replaceAll("#native", nativeStub);
                     OutputStream outputStream = stub.getOutputStream();
                     outputStream.write(source.getBytes("UTF-8"));
                     outputStream.close();
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }
+                try {
+//libs
+                    FileObject src = FileUtil.createFolder(directory.getParent(), "src");
+                    ClassPath classPath = ClassPath.getClassPath(src, ClassPath.COMPILE);
+                    List<FileObject> libs = new ArrayList<>();
+                    if (classPath != null) {
+                        List<ClassPath.Entry> entries = classPath.entries();
+                        for (int i = 0; i < entries.size(); i++) {
+                            ClassPath.Entry e = entries.get(i);
+                            String url = e.getURL().toExternalForm();
+                            if (url.startsWith("jar:")) {
+                                String path = url.replace("jar:file:", "").replace("!/", "").replace("!\\", "");
+                                FileObject fo = FileUtil.toFileObject(new File(path));
+                                if (fo != null) {
+                                    switch (fo.getNameExt()) {
+                                        case "CodenameOne.jar":
+                                        case "CodenameOne_SRC.zip":
+                                        case "CLDC11.jar":
+                                        case "JavaSE.jar":
+                                            break;
+                                        default:
+                                            libs.add(fo);
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    FileObject libsOut = FileUtil.createFolder(directory, "libs");
+                    for (FileObject lib : libs) {
+                        FileUtil.copyFile(lib, libsOut, lib.getName());
+                    }
+
+                } catch (Exception e) {
+                    Exceptions.printStackTrace(e);
+                }
             }
         }
     }
 
-    private void copyFolder(FileObject fo, FileObject srcOut) {
+    private void copyFolder(FileObject fo, FileObject srcOut, List<FileObject> writen) {
         FileObject[] childrens = fo.getChildren();
         for (FileObject children : childrens) {
             if (children.isFolder()) {
                 try {
-                    copyFolder(children, FileUtil.createFolder(srcOut, children.getNameExt()));
+                    copyFolder(children, FileUtil.createFolder(srcOut, children.getNameExt()), writen);
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }
             } else {
                 try {
-                    FileUtil.copyFile(children, srcOut, children.getName());
+                    FileObject copyFile = FileUtil.copyFile(children, srcOut, children.getName());
+                    if (writen != null) {
+                        writen.add(copyFile);
+                    }
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }

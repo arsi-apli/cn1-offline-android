@@ -102,6 +102,7 @@ public class Stub {
             + "        AndroidNativeUtil.addLifecycleListener((LifecycleListener)AndroidLocationPlayServiceManager.getInstance());\n"
             + "        GoogleImpl.init();\n"
             + "        AndroidNativeUtil.addLifecycleListener((LifecycleListener)GoogleConnect.getInstance());\n"
+            + "        #native"
             + "    }\n"
             + "\n"
             + "    protected void onDestroy() {\n"

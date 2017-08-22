@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -180,7 +181,9 @@ public class AndroidExplorerFactory implements NodeFactory {
                     }
 
                 }
-                return node.getActions(context);
+                List<Action> asList = new ArrayList<>(Arrays.asList(node.getActions(context)));
+                asList.addAll(0, Utilities.actionsForPath("Actions/AndroidOffline"));
+                return asList.toArray(new Action[asList.size()]);
             }
         }
 
@@ -223,6 +226,11 @@ public class AndroidExplorerFactory implements NodeFactory {
         public Project getProjectAndroid() {
             return projectAndroid;
         }
+
+        public Project getProjectGradle() {
+            return projectGradle;
+        }
+
 
         public FileObject getDirectory() {
             return directory;
