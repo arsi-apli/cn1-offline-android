@@ -137,12 +137,14 @@ public class AndroidExplorerFactory implements NodeFactory {
         Node node;
 
         private final String srcPath;
+        private final String nativePath;
 
         public AndroidNode(Node original, FileObject directory, Project projectAndroid) {
             super(original);
             this.directory = directory;
             this.projectAndroid = projectAndroid;
             srcPath = directory.getParent().getPath() + File.separator + "src";
+            nativePath = directory.getParent().getPath() + File.separator + "native" + File.separator + "android";
             DataObject.Registry registries = DataObject.getRegistry();
             registries.addChangeListener(WeakListeners.change(this, registries));
         }
@@ -198,7 +200,8 @@ public class AndroidExplorerFactory implements NodeFactory {
             }
         }
 
-        private Map<DataObject, Object> registered = new WeakHashMap<>();
+        private final Map<DataObject, Object> registeredSrc = new WeakHashMap<>();
+        private final Map<DataObject, Object> registeredNative = new WeakHashMap<>();
 
         @Override
         public void stateChanged(ChangeEvent e) {
@@ -206,9 +209,12 @@ public class AndroidExplorerFactory implements NodeFactory {
             if ((source instanceof HashSet)) {
                 HashSet<DataObject> dobs = (HashSet<DataObject>) source;
                 for (DataObject next : dobs) {
-                    if (next.getPrimaryFile().getPath().startsWith(srcPath) && !registered.containsKey(next)) {
+                    if (next.getPrimaryFile().getPath().startsWith(srcPath) && !registeredSrc.containsKey(next)) {
                         next.addPropertyChangeListener(WeakListeners.propertyChange(this, next));
-                        registered.put(next, null);
+                        registeredSrc.put(next, null);
+                    } else if (next.getPrimaryFile().getPath().startsWith(nativePath) && !registeredNative.containsKey(next)) {
+                        next.addPropertyChangeListener(WeakListeners.propertyChange(this, next));
+                        registeredNative.put(next, null);
                     }
                 }
             }
@@ -218,18 +224,36 @@ public class AndroidExplorerFactory implements NodeFactory {
         public void propertyChange(PropertyChangeEvent evt) {
             if (evt.getPropertyName() == null ? DataObject.PROP_MODIFIED == null : evt.getPropertyName().equals(DataObject.PROP_MODIFIED) && ((Boolean) evt.getNewValue()) == false) {
                 DataObject dob = (DataObject) evt.getSource();
-                try {
-                    InputStream is = dob.getPrimaryFile().getInputStream();
-                    FileObject out = FileUtil.createData(new File(directory.getPath() + File.separator + "src" + File.separator + "main" + File.separator + "java" + File.separator + dob.getPrimaryFile().getPath().replaceFirst(srcPath + File.separator, "")));
-                    OutputStream outputStream = out.getOutputStream();
-                    IOUtils.copy(is, outputStream);
-                    is.close();
-                    outputStream.close();
-                    FileUtil.refreshFor(new File(srcPath));
-                } catch (FileNotFoundException ex) {
-                    Exceptions.printStackTrace(ex);
-                } catch (IOException ex) {
-                    Exceptions.printStackTrace(ex);
+                //sync on save src
+                if (registeredSrc.containsKey(dob)) {
+                    try {
+                        InputStream is = dob.getPrimaryFile().getInputStream();
+                        FileObject out = FileUtil.createData(new File(directory.getPath() + File.separator + "src" + File.separator + "main" + File.separator + "java" + File.separator + dob.getPrimaryFile().getPath().replaceFirst(srcPath + File.separator, "")));
+                        OutputStream outputStream = out.getOutputStream();
+                        IOUtils.copy(is, outputStream);
+                        is.close();
+                        outputStream.close();
+                        FileUtil.refreshFor(new File(srcPath));
+                    } catch (FileNotFoundException ex) {
+                        Exceptions.printStackTrace(ex);
+                    } catch (IOException ex) {
+                        Exceptions.printStackTrace(ex);
+                    }
+                } else if (registeredNative.containsKey(dob)) {
+                    //sync on save native
+                    try {
+                        InputStream is = dob.getPrimaryFile().getInputStream();
+                        FileObject out = FileUtil.createData(new File(directory.getPath() + File.separator + "native" + File.separator + "android" + File.separator + dob.getPrimaryFile().getPath().replaceFirst(nativePath + File.separator, "")));
+                        OutputStream outputStream = out.getOutputStream();
+                        IOUtils.copy(is, outputStream);
+                        is.close();
+                        outputStream.close();
+                        FileUtil.refreshFor(new File(nativePath));
+                    } catch (FileNotFoundException ex) {
+                        Exceptions.printStackTrace(ex);
+                    } catch (IOException ex) {
+                        Exceptions.printStackTrace(ex);
+                    }
                 }
             }
         }
@@ -241,7 +265,6 @@ public class AndroidExplorerFactory implements NodeFactory {
         public Project getProjectGradle() {
             return projectGradle;
         }
-
 
         public FileObject getDirectory() {
             return directory;
