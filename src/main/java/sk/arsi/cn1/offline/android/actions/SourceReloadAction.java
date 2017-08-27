@@ -19,7 +19,6 @@ package sk.arsi.cn1.offline.android.actions;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -53,20 +52,7 @@ public class SourceReloadAction extends NodeAction {
     @Override
     protected void performAction(Node[] activatedNodes) {
         if ((activatedNodes.length > 0) && (activatedNodes[0] instanceof FilterNode)) {
-            Node original = null;
-            try {
-                Field field = FilterNode.class.getDeclaredField("original");
-                field.setAccessible(true);
-                original = (Node) field.get(activatedNodes[0]);
-            } catch (NoSuchFieldException ex) {
-                Exceptions.printStackTrace(ex);
-            } catch (SecurityException ex) {
-                Exceptions.printStackTrace(ex);
-            } catch (IllegalArgumentException ex) {
-                Exceptions.printStackTrace(ex);
-            } catch (IllegalAccessException ex) {
-                Exceptions.printStackTrace(ex);
-            }
+            Node original = activatedNodes[0].getLookup().lookup(AndroidExplorerFactory.AndroidNode.class);
             if (original instanceof AndroidExplorerFactory.AndroidNode) {
                 AndroidExplorerFactory.AndroidNode node = (AndroidExplorerFactory.AndroidNode) original;
                 Project project = (Project) node.getProjectAndroid();

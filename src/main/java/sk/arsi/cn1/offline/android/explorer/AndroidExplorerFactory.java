@@ -52,6 +52,9 @@ import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Utilities;
 import org.openide.util.WeakListeners;
+import org.openide.util.lookup.AbstractLookup;
+import org.openide.util.lookup.InstanceContent;
+import org.openide.util.lookup.ProxyLookup;
 
 /**
  *
@@ -63,6 +66,7 @@ public class AndroidExplorerFactory implements NodeFactory {
     @StaticResource
     private static final String ANDROID_ICON_RES = "sk/arsi/cn1/offline/16_android.gif";
     public static final Image ANDROID_ICON = ImageUtilities.loadImage(ANDROID_ICON_RES);
+    private final InstanceContent instanceContent = new InstanceContent();
 
     @Override
     public NodeList<?> createNodes(Project p) {
@@ -75,6 +79,7 @@ public class AndroidExplorerFactory implements NodeFactory {
 
         private final Project project;
         private FileObject androidDir;
+        private AndroidNode node;
 
         public AndroidFolderList(Project project) {
             this.project = project;
@@ -111,7 +116,12 @@ public class AndroidExplorerFactory implements NodeFactory {
         public Node node(FileObject key) {
             try {
                 DataObject dob = DataObject.find(key);
-                return new AndroidNode(dob.getNodeDelegate(), androidDir, project);
+                if (node != null) {
+                    instanceContent.remove(node);
+                }
+                node = new AndroidNode(dob.getNodeDelegate(), androidDir, project);
+                instanceContent.add(node);
+                return node;
             } catch (DataObjectNotFoundException ex) {
                 Exceptions.printStackTrace(ex);
             }
@@ -140,7 +150,7 @@ public class AndroidExplorerFactory implements NodeFactory {
         private final String nativePath;
 
         public AndroidNode(Node original, FileObject directory, Project projectAndroid) {
-            super(original);
+            super(original, new FilterNode.Children(original), new ProxyLookup(original.getLookup(), new AbstractLookup(instanceContent)));
             this.directory = directory;
             this.projectAndroid = projectAndroid;
             srcPath = directory.getParent().getPath() + File.separator + "src";
