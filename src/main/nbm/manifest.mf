@@ -1,4 +1,7 @@
 Manifest-Version: 1.0
 OpenIDE-Module-Layer: sk/arsi/cn1/offline/android/layer.xml
 OpenIDE-Module-Localizing-Bundle: sk/arsi/cn1/offline/android/Bundle.properties
+OpenIDE-Module-Display-Category: Mobility
+OpenIDE-Module-Short-Description: This Netbeans plugin allows you to build your Codename One applications for Android locally.
+OpenIDE-Module-Long-Description: This Netbeans plugin allows you to build your Codename One applications for Android locally.
 
