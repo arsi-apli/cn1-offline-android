@@ -3,16 +3,48 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>sk.arsi</groupId>
     <artifactId>cn1-offline-android</artifactId>
-    <version>01.01</version>
+    <version>01.05</version>
     <packaging>nbm</packaging>
+    <name>cn1-offline-android</name>
+    <organization>
+        <name>ArSi</name>
+    </organization>
+    <description>This Netbeans plugin allows you to build your Codename One applications for Android locally.</description>
+    <inceptionYear>2017</inceptionYear>
+    <url>https://sourceforge.net/projects/cn1offandrnb</url>
+    <issueManagement>
+        <system>Sourceforge</system>
+        <url>https://sourceforge.net/p/cn1offandrnb/tickets</url>
+    </issueManagement>
+    <licenses>
+        <license>
+            <name>Apache License 2</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>manual</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>arsi</id>
+            <name>ArSi</name>
+            <email>arsi@arsi.sk</email>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+    </developers>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>nbm-maven-plugin</artifactId>
-                <version>3.13</version>
+                <version>4.1</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <author>ArSi (arsi@arsi.sk)</author>
+                    <requiresRestart>true</requiresRestart>
+                    <keystore>/jetty/keystore/keystore.ks</keystore>
+                    <keystorealias>arsi</keystorealias>
                     <moduleDependencies>
                         <dependency>
                             <!--Private Package Reference-->
