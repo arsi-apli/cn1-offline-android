@@ -22,7 +22,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -67,20 +66,7 @@ public class InitAndroidProjectAction extends NodeAction {
     @Override
     protected void performAction(Node[] activatedNodes) {
         if ((activatedNodes.length > 0) && (activatedNodes[0] instanceof FilterNode)) {
-            Node original = null;
-            try {
-                Field field = FilterNode.class.getDeclaredField("original");
-                field.setAccessible(true);
-                original = (Node) field.get(activatedNodes[0]);
-            } catch (NoSuchFieldException ex) {
-                Exceptions.printStackTrace(ex);
-            } catch (SecurityException ex) {
-                Exceptions.printStackTrace(ex);
-            } catch (IllegalArgumentException ex) {
-                Exceptions.printStackTrace(ex);
-            } catch (IllegalAccessException ex) {
-                Exceptions.printStackTrace(ex);
-            }
+            Node original = activatedNodes[0].getLookup().lookup(AndroidNode.class);
             if (original instanceof AndroidNode) {
                 FileObject fob = activatedNodes[0].getLookup().lookup(FileObject.class);
                 InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(PROJECT_TAR);
