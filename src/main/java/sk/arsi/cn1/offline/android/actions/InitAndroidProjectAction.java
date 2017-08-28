@@ -17,8 +17,11 @@
 package sk.arsi.cn1.offline.android.actions;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,6 +31,9 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.java.classpath.ClassPath;
@@ -223,11 +229,115 @@ public class InitAndroidProjectAction extends NodeAction {
                     for (FileObject lib : libs) {
                         FileUtil.copyFile(lib, libsOut, lib.getName());
                     }
+                    //cn1 extensions
+                    FileObject libsFolder = FileUtil.createFolder(directory.getParent(), "lib");
+                    FileObject[] childs = libsFolder.getChildren();
+                    for (FileObject child : childs) {
+                        if ("cn1lib".equalsIgnoreCase(child.getExt())) {
+                            unpackCn1Lib(child, libsOut);
+                        }
+                    }
 
                 } catch (Exception e) {
                     Exceptions.printStackTrace(e);
                 }
             }
+        }
+    }
+
+    private void unpackCn1Lib(FileObject lib, FileObject libsOut) {
+        try {
+            ZipArchiveInputStream in = new ZipArchiveInputStream(lib.getInputStream());
+            ZipArchiveEntry entry;
+
+            while ((entry = in.getNextZipEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    switch (entry.getName()) {
+                        case "main.zip":
+                            int count;
+                            byte data[] = new byte[BUFFER_SIZE];
+                            String fileName = lib.getName() + "_main.jar";
+                            FileObject file = libsOut.createData(fileName);
+                            OutputStream fos = file.getOutputStream();
+                            try (BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER_SIZE)) {
+                                while ((count = in.read(data, 0, BUFFER_SIZE)) != -1) {
+                                    dest.write(data, 0, count);
+                                }
+                                dest.close();
+                            }
+                            break;
+                        case "nativeand.zip":
+                            unpackNativeCn1Lib(lib, in, entry, libsOut);
+                            break;
+                    }
+                }
+
+            }
+        } catch (FileNotFoundException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
+    private void unpackNativeCn1Lib(FileObject lib, ZipArchiveInputStream masterStream, ZipArchiveEntry masterEntry, FileObject libsOut) {
+        try {
+            int count;
+            FileObject src = FileUtil.createFolder(FileUtil.createFolder(FileUtil.createFolder(libsOut.getParent(), "src"), "main"), "java");
+            byte data[] = new byte[BUFFER_SIZE];
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            while ((count = masterStream.read(data, 0, BUFFER_SIZE)) != -1) {
+                bos.write(data, 0, count);
+            }
+            ZipArchiveInputStream in = new ZipArchiveInputStream(new ByteArrayInputStream(bos.toByteArray()));
+            bos.close();
+            String fileName = lib.getName() + "_native.jar";
+            FileObject jarFile = libsOut.createData(fileName);
+            ZipArchiveOutputStream out = new ZipArchiveOutputStream(jarFile.getOutputStream());
+            ZipArchiveEntry entry;
+
+            while ((entry = in.getNextZipEntry()) != null) {
+                if (entry.isDirectory()) {
+                    FileUtil.createFolder(src, entry.getName());
+                } else if (entry.getName().endsWith("jar")) {
+                    FileObject file = libsOut.createData(entry.getName());
+                    OutputStream fos = file.getOutputStream();
+                    try (BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER_SIZE)) {
+                        while ((count = in.read(data, 0, BUFFER_SIZE)) != -1) {
+                            dest.write(data, 0, count);
+                        }
+                        dest.close();
+                    }
+                } else {
+                    String name = entry.getName();
+                    String path = "";
+                    if (name.contains("/")) {
+                        path = name.substring(0, name.lastIndexOf('/'));
+                    }
+                    FileObject dir = src;
+                    if (!"".equals(path)) {
+                        dir = FileUtil.createFolder(src, path);
+                    }
+                    fileName = name.substring(name.lastIndexOf('/') + 1);
+                    FileObject prev = dir.getFileObject(fileName);
+                    if (prev != null) {
+                        prev.delete();
+                    }
+                    FileObject file = dir.createData(fileName);
+                    OutputStream fos = file.getOutputStream();
+                    try (BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER_SIZE)) {
+                        while ((count = in.read(data, 0, BUFFER_SIZE)) != -1) {
+                            dest.write(data, 0, count);
+                        }
+                        dest.close();
+                    }
+                }
+            }
+            out.finish();
+            out.flush();
+            out.close();
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
         }
     }
 
