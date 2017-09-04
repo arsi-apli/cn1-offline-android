@@ -41,6 +41,7 @@ import org.netbeans.api.project.Project;
 import org.openide.awt.ActionID;
 import org.openide.awt.ActionRegistration;
 import org.openide.filesystems.FileChooserBuilder;
+import org.openide.filesystems.FileLock;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.nodes.FilterNode;
@@ -91,9 +92,7 @@ public class InitAndroidProjectAction extends NodeAction {
                 try {
                     String script = gradle.asText("UTF-8");
                     script = script.replace("com.codename1.apps.devicetester", packageName);
-                    OutputStream os = gradle.getOutputStream();
-                    os.write(script.getBytes("UTF-8"));
-                    os.close();
+                    writeToStream(gradle, script);
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }
@@ -104,9 +103,7 @@ public class InitAndroidProjectAction extends NodeAction {
                     script = script.replace("android:label=\"DeviceTester\"", "android:label=\"" + mainName + "\"");
                     script = script.replace("android:name=\"com.codename1.apps.devicetester.DeviceTesterStub\"", "android:name=\"" + packageName + "." + mainName + "Stub\"");
                     script = script.replace("android:authorities=\"com.codename1.apps.devicetester.google_measurement_service\"", "android:authorities=\"" + packageName + ".google_measurement_service\"");
-                    OutputStream os = manifest.getOutputStream();
-                    os.write(script.getBytes("UTF-8"));
-                    os.close();
+                    writeToStream(manifest, script);
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }
@@ -125,11 +122,10 @@ public class InitAndroidProjectAction extends NodeAction {
                 if (sdkPath != null) {
                     try {
                         FileObject local = directory.getFileObject("local", "properties");
-                        OutputStream os = local.getOutputStream();
                         String prop = "sdk.dir=" + sdkPath + "\n";
-                        os.write(prop.getBytes("UTF-8"));
-                        os.close();
+                        writeToStream(local, prop);
                     } catch (Exception e) {
+                        Exceptions.printStackTrace(e);
                     }
                 }
                 try {
@@ -191,9 +187,7 @@ public class InitAndroidProjectAction extends NodeAction {
                     }
                     nativeStub += "\n";
                     source = source.replaceAll("#native", nativeStub);
-                    OutputStream outputStream = stub.getOutputStream();
-                    outputStream.write(source.getBytes("UTF-8"));
-                    outputStream.close();
+                    writeToStream(stub, source);
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }
@@ -242,6 +236,20 @@ public class InitAndroidProjectAction extends NodeAction {
                     Exceptions.printStackTrace(e);
                 }
             }
+        }
+    }
+
+    private void writeToStream(FileObject fob, String script) {
+        FileLock lock = null;
+        try {
+            lock = fob.lock();
+            OutputStream os = fob.getOutputStream(lock);
+            os.write(script.getBytes("UTF-8"));
+            os.close();
+        } catch (IOException iOException) {
+            Exceptions.printStackTrace(iOException);
+        } finally {
+            lock.releaseLock();
         }
     }
 

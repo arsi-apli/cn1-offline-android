@@ -31,13 +31,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import org.apache.commons.io.IOUtils;
 import org.netbeans.api.annotations.common.StaticResource;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectManager;
+import org.netbeans.api.project.SourceGroup;
 import org.netbeans.gradle.project.NbGradleProjectFactory;
+import org.netbeans.spi.java.project.support.ui.PackageView;
 import org.netbeans.spi.project.ProjectState;
 import org.netbeans.spi.project.ui.LogicalViewProvider;
 import org.netbeans.spi.project.ui.support.NodeFactory;
@@ -151,7 +154,7 @@ public class AndroidExplorerFactory implements NodeFactory {
         private final String nativePath;
 
         public AndroidNode(Node original, FileObject directory, Project projectAndroid) {
-            super(original);
+            super(original, new AndroidDirectoryFilter(original));
             this.directory = directory;
             this.projectAndroid = projectAndroid;
             srcPath = directory.getParent().getPath() + File.separator + "src";
@@ -282,5 +285,106 @@ public class AndroidExplorerFactory implements NodeFactory {
         }
 
     }
+
+    private class AndroidDirectoryFilter extends FilterNode.Children {
+
+        public AndroidDirectoryFilter(Node or) {
+            super(or);
+        }
+
+        @Override
+        protected Node[] createNodes(Node key) {
+            FileObject fo = key.getLookup().lookup(FileObject.class);
+            if (fo != null && fo.getName().equalsIgnoreCase("src") && fo.isFolder()) {
+                return new Node[]{new SrcNode(key)};
+            }
+            return super.createNodes(key); //To change body of generated methods, choose Tools | Templates.
+        }
+
+    }
+
+    private class SrcNode extends FilterNode {
+
+        public SrcNode(Node original) {
+            super(original, new SrcFilter(original));
+        }
+
+    }
+
+    private class SrcFilter extends FilterNode.Children {
+
+        public SrcFilter(Node or) {
+            super(or);
+        }
+
+        @Override
+        protected Node[] createNodes(Node key) {
+            FileObject fo = key.getLookup().lookup(FileObject.class);
+            if (fo != null && (fo.getName().equalsIgnoreCase("main") || fo.getName().equalsIgnoreCase("androidTest") || fo.getName().equalsIgnoreCase("test")) && fo.isFolder()) {
+                return new Node[]{new MainNode(key)};
+            }
+            return super.createNodes(key); //To change body of generated methods, choose Tools | Templates.
+        }
+
+
+    }
+
+    private class MainNode extends FilterNode {
+
+        public MainNode(Node original) {
+            super(original, new MainFilter(original));
+        }
+
+    }
+
+    private class MainFilter extends FilterNode.Children {
+
+        public MainFilter(Node or) {
+            super(or);
+        }
+
+        @Override
+        protected Node[] createNodes(Node key) {
+            final FileObject fo = key.getLookup().lookup(FileObject.class);
+            if (fo != null && fo.getName().equalsIgnoreCase("java") && fo.isFolder()) {
+                return new Node[]{PackageView.createPackageView(new SourceGroup() {
+                    @Override
+                    public FileObject getRootFolder() {
+                        return fo;
+                    }
+
+                    @Override
+                    public String getName() {
+                        return "java";
+                    }
+
+                    @Override
+                    public String getDisplayName() {
+                        return "java";
+                    }
+
+                    @Override
+                    public Icon getIcon(boolean opened) {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean contains(FileObject file) {
+                        return file.getPath().startsWith(fo.getPath());
+                    }
+
+                    @Override
+                    public void addPropertyChangeListener(PropertyChangeListener listener) {
+                    }
+
+                    @Override
+                    public void removePropertyChangeListener(PropertyChangeListener listener) {
+                    }
+                })};
+            }
+            return super.createNodes(key); //To change body of generated methods, choose Tools | Templates.
+        }
+    }
+
 
 }
