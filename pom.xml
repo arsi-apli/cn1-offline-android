@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>sk.arsi</groupId>
     <artifactId>cn1-offline-android</artifactId>
-    <version>01.07</version>
+    <version>01.08</version>
     <packaging>nbm</packaging>
     <name>cn1-offline-android</name>
     <organization>
