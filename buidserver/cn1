@@ -1,0 +1,24 @@
+#!/bin/bash
+cd /opt/cn1/CodenameOne
+git fetch -q
+OUTPUT="$(git rev-parse origin/master)"
+ file="/var/www/html/cn1/versions.db"
+ if grep -Fxq "$OUTPUT" $file
+    then
+            exit
+ fi
+cd /opt/cn1/CodenameOne
+git fetch
+git reset --hard
+git pull
+cd /opt/cn1/CodenameOne/CodenameOne
+/usr/bin/antx jar
+/bin/cp -u  /opt/cn1/project.properties /opt/cn1/CodenameOne/Ports/Android/nbproject/project.properties
+cd /opt/cn1/CodenameOne/Ports/Android
+/usr/bin/antx jar
+cd /opt/cn1/CodenameOne
+OUTPUT1="$(git rev-parse HEAD)"
+git show ${OUTPUT1} >>/var/www/html/cn1/${OUTPUT1}.info
+/bin/cp -u /opt/cn1/CodenameOne/Ports/Android/dist/Android.jar /var/www/html/cn1/${OUTPUT1}.jar
+cd /var/www/html/cn1
+echo "${OUTPUT1}" >>versions.db
