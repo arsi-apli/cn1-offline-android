@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>sk.arsi</groupId>
     <artifactId>cn1-offline-android</artifactId>
-    <version>01.08</version>
+    <version>01.09</version>
     <packaging>nbm</packaging>
     <name>cn1-offline-android</name>
     <organization>
@@ -215,6 +215,37 @@
             <artifactId>org-netbeans-modules-java-project-ui</artifactId>
             <version>RELEASE81</version>
             <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-editor-mimelookup</artifactId>
+            <version>RELEASE81</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-text</artifactId>
+            <version>RELEASE81</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-editor</artifactId>
+            <version>RELEASE81</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-openide-windows</artifactId>
+            <version>RELEASE81</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-api-progress</artifactId>
+            <version>RELEASE81</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-api-progress-nb</artifactId>
+            <version>RELEASE81</version>
         </dependency>
     </dependencies>
     <properties>
