@@ -67,6 +67,7 @@ public class UpdateAndroidLibAction extends NodeAction {
                 AndroidExplorerFactory.AndroidNode node = (AndroidExplorerFactory.AndroidNode) original;
                 Project project = (Project) node.getProjectAndroid();
                 FileObject directory = node.getDirectory();
+                form.refresh();
                 Object notify = DialogDisplayer.getDefault().notify(desc);
                 String selected = form.getSelected();
                 if (DialogDescriptor.OK_OPTION.equals(notify)) {

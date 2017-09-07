@@ -153,6 +153,30 @@ public class AndroidLibSelector extends javax.swing.JPanel {
         desc.setValid(selected != null);
     }
 
+    public void refresh(){
+        try {
+            URL db = new URL("http://server.arsi.sk/cn1/versions.db");
+            URLConnection connection = db.openConnection();
+            connection.setConnectTimeout(3000);
+            connection.connect();
+            InputStream fis = connection.getInputStream();
+            InputStreamReader isr = new InputStreamReader(fis, Charset.forName("UTF-8"));
+            BufferedReader br = new BufferedReader(isr);
+            String line;
+            List<String> lines = new ArrayList<>();
+            while ((line = br.readLine()) != null) {
+                lines.add(line);
+            }
+            fis.close();
+            list.setModel(new VersionListModel(lines));
+
+        } catch (MalformedURLException ex) {
+            Exceptions.printStackTrace(ex);
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+    }
+
     public String getSelected() {
 
         return selected;
