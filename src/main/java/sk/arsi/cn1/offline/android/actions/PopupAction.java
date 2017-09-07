@@ -28,6 +28,8 @@ import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
+import org.openide.util.ContextAwareAction;
+import org.openide.util.Lookup;
 import org.openide.util.NbBundle.Messages;
 import org.openide.util.Utilities;
 import org.openide.util.actions.Presenter;
@@ -47,7 +49,17 @@ import org.openide.util.actions.Presenter;
     @ActionReference(path = "AndroidOffline")
 })
 @Messages("CTL_PopupAction=Android offline")
-public class PopupAction extends AbstractAction implements ActionListener, Presenter.Popup {
+public class PopupAction extends AbstractAction implements ActionListener, Presenter.Popup, ContextAwareAction {
+
+    private final Lookup actionContext;
+
+    public PopupAction() {
+        actionContext = null;
+    }
+
+    public PopupAction(Lookup actionContext) {
+        this.actionContext = actionContext;
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -59,8 +71,20 @@ public class PopupAction extends AbstractAction implements ActionListener, Prese
         JMenu main = new JMenu(Bundle.CTL_PopupAction());
         List<? extends Action> actionsForPath = Utilities.actionsForPath("Actions/AndroidOfflineSub/SubActions");
         for (Action action : actionsForPath) {
-            main.add(action);
+            if (action instanceof ContextAwareAction) {
+                action = ((ContextAwareAction) action).createContextAwareInstance(actionContext);
+            }
+            if (action instanceof Presenter.Popup) {
+                main.add(((Popup) action).getPopupPresenter());
+            } else {
+                main.add(action);
+            }
         }
         return main;
+    }
+
+    @Override
+    public Action createContextAwareInstance(Lookup actionContext) {
+        return new PopupAction(actionContext);
     }
 }
