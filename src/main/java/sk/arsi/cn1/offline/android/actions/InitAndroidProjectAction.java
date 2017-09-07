@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -456,6 +457,17 @@ public class InitAndroidProjectAction extends NodeAction {
             Exceptions.printStackTrace((Throwable) ex);
         }
         return prop;
+    }
+
+    public static void storeProjectBuildProperties(final Project prj, Properties properties) {
+        final FileObject projectDir = prj.getProjectDirectory();
+        try {
+            final FileOutputStream out = new FileOutputStream(projectDir.getPath() + "/codenameone_settings.properties");
+            properties.store(out, NAME);
+            out.close();
+        } catch (IOException ex) {
+            Exceptions.printStackTrace((Throwable) ex);
+        }
     }
 
 }
