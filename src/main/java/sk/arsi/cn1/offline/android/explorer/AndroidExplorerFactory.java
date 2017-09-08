@@ -243,9 +243,16 @@ public class AndroidExplorerFactory implements NodeFactory {
                 //sync on save src
                 if (registeredSrc.containsKey(dob)) {
                     try {
-                        InputStream is = dob.getPrimaryFile().getInputStream();
+
                         FileObject out = FileUtil.createData(new File(directory.getPath() + File.separator + "src" + File.separator + "main" + File.separator + "java" + File.separator + dob.getPrimaryFile().getPath().replaceFirst(srcPath + File.separator, "")));
+                        List<String> freezeList = FreezeProjectHook.freezeMap.get(projectAndroid);
+                        for (String freezePath : freezeList) {
+                            if (out.getPath().startsWith(freezePath)) {
+                                return;
+                            }
+                        }
                         OutputStream outputStream = out.getOutputStream();
+                        InputStream is = dob.getPrimaryFile().getInputStream();
                         IOUtils.copy(is, outputStream);
                         is.close();
                         outputStream.close();
@@ -258,8 +265,14 @@ public class AndroidExplorerFactory implements NodeFactory {
                 } else if (registeredNative.containsKey(dob)) {
                     //sync on save native
                     try {
-                        InputStream is = dob.getPrimaryFile().getInputStream();
                         FileObject out = FileUtil.createData(new File(directory.getPath() + File.separator + "native" + File.separator + "android" + File.separator + dob.getPrimaryFile().getPath().replaceFirst(nativePath + File.separator, "")));
+                        List<String> freezeList = FreezeProjectHook.freezeMap.get(projectAndroid);
+                        for (String freezePath : freezeList) {
+                            if (out.getPath().startsWith(freezePath)) {
+                                return;
+                            }
+                        }
+                        InputStream is = dob.getPrimaryFile().getInputStream();
                         OutputStream outputStream = out.getOutputStream();
                         IOUtils.copy(is, outputStream);
                         is.close();
@@ -327,7 +340,6 @@ public class AndroidExplorerFactory implements NodeFactory {
             }
             return super.createNodes(key); //To change body of generated methods, choose Tools | Templates.
         }
-
 
     }
 
@@ -424,6 +436,5 @@ public class AndroidExplorerFactory implements NodeFactory {
         }
 
     }
-
 
 }
