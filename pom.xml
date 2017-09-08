@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>sk.arsi</groupId>
     <artifactId>cn1-offline-android</artifactId>
-    <version>01.11</version>
+    <version>01.12</version>
     <packaging>nbm</packaging>
     <name>cn1-offline-android</name>
     <organization>
@@ -245,6 +245,11 @@
         <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-netbeans-api-progress-nb</artifactId>
+            <version>RELEASE81</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.api</groupId>
+            <artifactId>org-netbeans-modules-projectuiapi-base</artifactId>
             <version>RELEASE81</version>
         </dependency>
     </dependencies>

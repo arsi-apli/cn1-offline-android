@@ -55,7 +55,9 @@ import org.openide.util.Exceptions;
 import org.openide.util.ImageUtilities;
 import org.openide.util.Utilities;
 import org.openide.util.WeakListeners;
+import org.openide.util.actions.SystemAction;
 import org.openide.util.lookup.InstanceContent;
+import sk.arsi.cn1.offline.android.actions.FreezeFileAction;
 
 /**
  *
@@ -347,7 +349,7 @@ public class AndroidExplorerFactory implements NodeFactory {
         protected Node[] createNodes(Node key) {
             final FileObject fo = key.getLookup().lookup(FileObject.class);
             if (fo != null && fo.getName().equalsIgnoreCase("java") && fo.isFolder()) {
-                return new Node[]{PackageView.createPackageView(new SourceGroup() {
+                return new Node[]{new FileActionNode(PackageView.createPackageView(new SourceGroup() {
                     @Override
                     public FileObject getRootFolder() {
                         return fo;
@@ -380,10 +382,47 @@ public class AndroidExplorerFactory implements NodeFactory {
                     @Override
                     public void removePropertyChangeListener(PropertyChangeListener listener) {
                     }
-                })};
+                }))};
             }
             return super.createNodes(key); //To change body of generated methods, choose Tools | Templates.
         }
+    }
+
+    private class FileActionNode extends FilterNode {
+
+        public FileActionNode(Node original) {
+            super(original, new FileActionNodeFilter(original));
+        }
+
+        @Override
+        public Action[] getActions(boolean context) {
+            List<Action> asList = new ArrayList<>(Arrays.asList(super.getActions(context)));
+            int index = 1;
+            for (int i = 0; i < asList.size(); i++) {
+                Action a = asList.get(i);
+                if (a != null && "WithSubMenu".equals(a.getClass().getSimpleName())) {
+                    index = i + 1;
+                    break;
+                }
+            }
+            FreezeFileAction freezeAction = SystemAction.get(FreezeFileAction.class);
+            asList.add(index, freezeAction);
+            return asList.toArray(new Action[asList.size()]); //To change body of generated methods, choose Tools | Templates.
+        }
+
+    }
+
+    private class FileActionNodeFilter extends FilterNode.Children {
+
+        public FileActionNodeFilter(Node or) {
+            super(or);
+        }
+
+        @Override
+        protected Node[] createNodes(Node key) {
+            return new Node[]{new FileActionNode(key)};
+        }
+
     }
 
 

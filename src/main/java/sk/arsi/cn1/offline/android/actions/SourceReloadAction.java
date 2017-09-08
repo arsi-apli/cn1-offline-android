@@ -20,7 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import org.netbeans.api.project.Project;
@@ -35,6 +38,7 @@ import org.openide.util.HelpCtx;
 import org.openide.util.actions.NodeAction;
 import static sk.arsi.cn1.offline.android.actions.InitAndroidProjectAction.openProjectBuildProperties;
 import sk.arsi.cn1.offline.android.explorer.AndroidExplorerFactory;
+import sk.arsi.cn1.offline.android.explorer.FreezeProjectHook;
 
 /**
  *
@@ -48,8 +52,6 @@ import sk.arsi.cn1.offline.android.explorer.AndroidExplorerFactory;
         displayName = "", lazy = false
 )
 public class SourceReloadAction extends NodeAction {
-
-    private byte[] stubBackup;
 
     @Override
     protected void performAction(Node[] activatedNodes) {
@@ -65,22 +67,31 @@ public class SourceReloadAction extends NodeAction {
                 String keystorePassword = properties.getProperty("codename1.android.keystorePassword");
                 String keystore = properties.getProperty("codename1.android.keystore");
                 String keystoreAlias = properties.getProperty("codename1.android.keystoreAlias");
-                String generateStub = properties.getProperty(UrRefreshAndroidStubAction.ARSIREGENERATESTUB, "true");
+
                 try {
                     //copy sources
                     FileObject src = FileUtil.createFolder(directory.getParent(), "src");
                     FileObject srcOut = FileUtil.createFolder(FileUtil.createFolder(FileUtil.createFolder(directory, "src"), "main"), "java");
                     FileObject assetsOut = FileUtil.createFolder(FileUtil.createFolder(FileUtil.createFolder(directory, "src"), "main"), "assets");
-                    if ("false".equals(generateStub)) {
-                        StringTokenizer tok = new StringTokenizer(packageName, ".", false);
-                        FileObject current = srcOut;
-                        while (tok.hasMoreElements()) {
-                            String dirName = tok.nextToken();
-                            current = FileUtil.createFolder(current, dirName);
+                    List<String> freezeList = FreezeProjectHook.freezeMap.get(project);
+                    Map<String, byte[]> backup = new HashMap<>();
+                    for (String freezeFoPath : freezeList) {
+                        FileObject freezeFo = FileUtil.toFileObject(new File(freezeFoPath));
+                        if (freezeFo.isValid() && freezeFo.isData()) {
+                            byte[] asBytes = freezeFo.asBytes();
+                            backup.put(freezeFo.getPath().replace(srcOut.getPath(), ""), asBytes);
+                        } else if (freezeFo.isValid() && freezeFo.isFolder()) {
+                            Enumeration<? extends FileObject> children = freezeFo.getChildren(true);
+                            while (children.hasMoreElements()) {
+                                FileObject nextElement = children.nextElement();
+                                if (nextElement.isValid() && nextElement.isData()) {
+                                    byte[] asBytes = nextElement.asBytes();
+                                    backup.put(nextElement.getPath().replace(srcOut.getPath(), ""), asBytes);
+                                }
+                            }
                         }
-                        FileObject stub = FileUtil.createData(current, mainName + "Stub.java");
-                        stubBackup = stub.asBytes();
                     }
+
                     srcOut.delete();
                     srcOut = FileUtil.createFolder(FileUtil.createFolder(FileUtil.createFolder(directory, "src"), "main"), "java");
                     FileObject[] children = src.getChildren();
@@ -127,25 +138,27 @@ public class SourceReloadAction extends NodeAction {
                         current = FileUtil.createFolder(current, dirName);
                     }
                     FileObject stub = FileUtil.createData(current, mainName + "Stub.java");
-                    if ("true".equals(generateStub)) {
+                    String source = Stub.STUB;
+                    source = source.replaceAll("#package", packageName);
+                    source = source.replaceAll("#classname", mainName + "Stub");
+                    source = source.replaceAll("#origname", mainName);
+                    String nativeStub = "\n";
+                    for (String classe : classes) {
+                        nativeStub += "com.codename1.system.NativeLookup.register(" + classe.replace("Impl", "") + ".class," + classe + ".class);\n";
+                    }
+                    nativeStub += "\n";
+                    source = source.replaceAll("#native", nativeStub);
+                    OutputStream outputStream = stub.getOutputStream();
+                    outputStream.write(source.getBytes("UTF-8"));
+                    outputStream.close();
+                    for (Map.Entry<String, byte[]> entry : backup.entrySet()) {
+                        String path = entry.getKey();
+                        byte[] data = entry.getValue();
+                        FileObject dfob = FileUtil.createData(srcOut, path);
+                        OutputStream os = dfob.getOutputStream();
+                        os.write(data);
+                        os.close();
 
-                        String source = Stub.STUB;
-                        source = source.replaceAll("#package", packageName);
-                        source = source.replaceAll("#classname", mainName + "Stub");
-                        source = source.replaceAll("#origname", mainName);
-                        String nativeStub = "\n";
-                        for (String classe : classes) {
-                            nativeStub += "com.codename1.system.NativeLookup.register(" + classe.replace("Impl", "") + ".class," + classe + ".class);\n";
-                        }
-                        nativeStub += "\n";
-                        source = source.replaceAll("#native", nativeStub);
-                        OutputStream outputStream = stub.getOutputStream();
-                        outputStream.write(source.getBytes("UTF-8"));
-                        outputStream.close();
-                    } else {
-                        OutputStream outputStream = stub.getOutputStream();
-                        outputStream.write(stubBackup);
-                        outputStream.close();
                     }
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
