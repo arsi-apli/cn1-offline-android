@@ -168,7 +168,7 @@ public class Stub {
             + "                ((LocalNotificationCallback)#classname.i).localNotificationReceived(intent.getExtras().getString(\"LocalNotificationID\"));\n"
             + "            }\n"
             + "        }\n"
-            + "        if (MainStub.firstTime) {\n"
+            + "        if (#classname.firstTime) {\n"
             + "          Display.getInstance().callSerially((Runnable)this);\n"
             + "        }\n"
             + "    }\n"
