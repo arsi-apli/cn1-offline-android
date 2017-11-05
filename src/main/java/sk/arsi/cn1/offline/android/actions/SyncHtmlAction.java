@@ -17,6 +17,7 @@ package sk.arsi.cn1.offline.android.actions;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -69,22 +70,29 @@ public class SyncHtmlAction extends NodeAction {
                     FileObject html = FileUtil.createFolder(classes, "html");
                     FileObject src = FileUtil.createFolder(directory, "src");
                     FileObject main = FileUtil.createFolder(src, "main");
-                    TarArchiveOutputStream stream = new TarArchiveOutputStream(new FileOutputStream(main.getPath() + File.separator + "html.tar"));
-                    FileObject[] children = html.getChildren();
-                    for (FileObject children1 : children) {
-                        addFileToTarGz(stream, FileUtil.toFile(children1).getAbsolutePath(), "");
-                    }
-
+                    FileObject resources = FileUtil.createFolder(src, "resources");
+                    //for old gradle
+                    TarArchiveOutputStream stream = buildHtml(main, html);
                     stream.flush();
                     stream.close();
-                    System.out.println("sk.arsi.cn1.offline.android.actions.SyncHtmlAction.performAction()");
-
-
+                    //for new gradle version
+                    stream = buildHtml(resources, html);
+                    stream.flush();
+                    stream.close();
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
                 }
             }
         }
+    }
+
+    private TarArchiveOutputStream buildHtml(FileObject main, FileObject html) throws FileNotFoundException, IOException {
+        TarArchiveOutputStream stream = new TarArchiveOutputStream(new FileOutputStream(main.getPath() + File.separator + "html.tar"));
+        FileObject[] children = html.getChildren();
+        for (FileObject children1 : children) {
+            addFileToTarGz(stream, FileUtil.toFile(children1).getAbsolutePath(), "");
+        }
+        return stream;
     }
 
     private void addFileToTarGz(TarArchiveOutputStream tOut, String path, String base)
