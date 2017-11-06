@@ -70,13 +70,18 @@ public class SyncHtmlAction extends NodeAction {
                     FileObject html = FileUtil.createFolder(classes, "html");
                     FileObject src = FileUtil.createFolder(directory, "src");
                     FileObject main = FileUtil.createFolder(src, "main");
-                    FileObject resources = FileUtil.createFolder(src, "resources");
+                    FileObject resources = FileUtil.createFolder(main, "resources");
+                    FileObject assets = FileUtil.createFolder(main, "assets");
                     //for old gradle
                     TarArchiveOutputStream stream = buildHtml(main, html);
                     stream.flush();
                     stream.close();
                     //for new gradle version
                     stream = buildHtml(resources, html);
+                    stream.flush();
+                    stream.close();
+                    //for assets
+                    stream = buildHtml(assets, html);
                     stream.flush();
                     stream.close();
                 } catch (IOException ex) {
